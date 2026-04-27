@@ -45,7 +45,7 @@ npm run format      # Prettier (src/)
 npm run test:unit   # Vitest
 ```
 
-**End-to-end tests** (Playwright):
+**End-to-end tests** (Playwright) <- This is not implemented, due to time constraint: 
 
 ```sh
 npx playwright install   # first time only
