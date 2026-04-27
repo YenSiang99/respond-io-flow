@@ -1,6 +1,6 @@
-# Respond.io-style flow builder
+# Respond.io flow builder
 
-A Vue 3 + Vite app for editing a flow on a canvas, implemented using Vue Flow. 
+A persistent frontend Vue 3 + Vite app for editing a flow on a canvas, implemented using Vue Flow. 
 State is kept in the browser via `localStorage`, with a bundled JSON seed for first load.
 
 ## Requirements
