@@ -1,69 +1,77 @@
-# .
+# Respond.io-style flow builder
 
-This template should help get you started developing with Vue 3 in Vite.
+A Vue 3 + Vite app for editing a flow on a canvas, implemented using Vue Flow. 
+State is kept in the browser via `localStorage`, with a bundled JSON seed for first load.
 
-## Recommended IDE Setup
+## Requirements
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Node.js** `^20.19.0` or `>=22.12.0` (see `package.json` → `engines`)
 
-## Recommended Browser Setup
+## Installation
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+From the project root:
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+## Running locally
+
+**Development** (hot reload):
 
 ```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+Then open the URL Vite prints (usually `http://localhost:5173`).
+
+**Production build**:
 
 ```sh
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+**Preview the production build** (after `npm run build`):
 
 ```sh
-npm run test:unit
+npm run preview
 ```
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+## Quality checks
 
 ```sh
-# Install browsers for the first run
-npx playwright install
+npm run lint        # Oxlint + ESLint
+npm run format      # Prettier (src/)
+npm run test:unit   # Vitest
+```
 
-# When testing on CI, must build the project first
-npm run build
+**End-to-end tests** (Playwright):
 
-# Runs the end-to-end tests
+```sh
+npx playwright install   # first time only
+npm run build            # e2e expects a build
 npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Design decisions
 
-```sh
-npm run lint
-```
+These are intentional tradeoffs aimed at clarity, interviewability, and maintainability—not accidental complexity.
+
+1. **Domain model vs canvas library**  
+   The source of truth is a flat **`steps` array** (triggers, messages, business-hours nodes, etc.) plus a separate **`positions` map** for node coordinates. [Vue Flow](https://vueflow.dev/) consumes `nodes` and `edges`; a dedicated **adapter** maps `steps` ↔ canvas shape. That keeps persistence and future APIs aligned with “flow JSON,” not with a particular graph UI.
+
+2. **Pinia + TanStack Query together**  
+   **Pinia** holds live edits (drag, connect, add node). **TanStack Query** owns the async load path and cache key for the same payload, and a **mutation** writes debounced snapshots to `localStorage`. Pinia is a good fit for fast, synchronous UI state; Query gives a consistent pattern if loading moves to HTTP later.
+
+3. **Debounced persistence**  
+   Saves to `localStorage` run on a **short debounce** after `steps` / `positions` change, so rapid drags do not stringify and write on every frame.
+
+4. **Bootstrap vs async load**  
+   The store **hydrates synchronously** from `localStorage` or the bundled seed so the first paint is consistent. Query still loads the same logical data for cache coherence and any UI that depends on query state.
+
+5. **Branch “connector” steps**  
+   Business-hours branching is modeled with lightweight **`dateTimeConnector`** steps (success/failure routing) so the canvas can show two edges without overloading the main card node. That matches how many flow builders separate “routing” from “content” steps.
+
+---
+
+Built with Vue 3, Vite, Pinia, Vue Router, Tailwind CSS v4, [@vue-flow/core](https://github.com/bcakmakoglu/vue-flow), and [@tanstack/vue-query](https://tanstack.com/query/latest).
